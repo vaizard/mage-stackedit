@@ -1,0 +1,15 @@
+[Unit]
+Description=StackEdit Server
+After=network.target
+[Service]
+Type=simple
+Environment=PORT=8080
+WorkingDirectory=/opt/stackedit
+ExecStart=/usr/bin/node server.js
+User=stackedit
+group=stackedit
+Restart=always
+RestartSec=9
+[Install]
+WantedBy=multi-user.target
+
