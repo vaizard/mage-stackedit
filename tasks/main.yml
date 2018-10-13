@@ -1,0 +1,45 @@
+---
+
+- name: Create non-priviledged user to run stackedit
+  user: >
+    name=stackedit
+    append=yes
+    groups=users
+
+- name: Add nodesource apt_keys
+  apt_key:
+    url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+    state: present
+
+- apt_repository:
+    repo: "deb https://deb.nodesource.com/node_8.x {{ ansible_distribution_release }} main"
+  state: present
+
+- name: Install stackedit dependencies
+  action: apt pkg={{ item }} state=latest update_cache=yes
+  with_items:
+   - nodejs
+
+- name: Clone stackedit from github
+  git: repo=https://github.com/benweet/stackedit.git dest=/opt/stackedit version={{ stackedit_version }}
+
+- name: Call npm install
+  shell: "{{ item }}
+  args:
+    chdir: /opt/stackedit
+  with_items:
+    - npm install --unsafe-perm
+    - npm cache clean --force 
+    - npm run build
+    
+- name: Setup a systemd unit file for stackedit
+  template: >
+    src=stackedit.service.j2
+    dest=/lib/systemd/system/stackedit.service
+    
+- name: Enable and start the stackedit systemd service
+  systemd: >
+    name=stackedit
+    enabled=yes
+    state=restarted
+    daemon_reload=yes
